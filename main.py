@@ -3,6 +3,7 @@ import pygame, sys
 from pygame.locals import *
 import random, time
 import json
+from network import Network 
 
 with open("character_config.json", "r") as config_file:
     CHARACTER_CONFIG = json.load(config_file)
@@ -13,8 +14,8 @@ vec = pygame.math.Vector2
 
 #Setting up FPS 
 FPS = 30
-FramePerSec = pygame.time.Clock()
-
+clock = pygame.time.Clock()
+                                                                                 
 #Creating colors
 BLUE  = (0, 0, 255)
 RED   = (255, 0, 0)
@@ -30,9 +31,22 @@ FRIC = -0.12
 GRAVITY = 0.5
 
 #Create a white screen 
-BUFFER = pygame.display.set_mode((600,400))
-BUFFER.fill(WHITE)
-pygame.display.set_caption("Game")
+BUFFER = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+def drawWindow(BUFFER):
+    BUFFER.fill(WHITE)
+    pygame.display.set_caption("Game")
+
+clientNumber = 0
+
+def main():
+    run = True 
+    while run:
+        clock.tick(FPS)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                run = False
+                pygame.quit()
+        drawWindow(BUFFER)
 
 ASTR_KEYS = {
     "left": K_a,  
@@ -56,13 +70,13 @@ def update_camera(player, camera_offset):
     camera_offset.x = player.rect.centerx - SCREEN_WIDTH // 2
     camera_offset.y = player.rect.centery - SCREEN_HEIGHT // 2
 
-    # Optional: Clamp camera to the bounds of the level
+    # Clamp camera to the bounds of the level
     camera_offset.x = max(0, min(camera_offset.x, LEVEL_WIDTH - SCREEN_WIDTH))
     camera_offset.y = max(0, min(camera_offset.y, LEVEL_HEIGHT - SCREEN_HEIGHT))
 
     return camera_offset
 
-LEVEL_WIDTH = 1000  # Example: Make your level larger than the screen
+LEVEL_WIDTH = 1000  # Level is larger than the screen
 LEVEL_HEIGHT = 800
 
 class Character(pygame.sprite.Sprite):
@@ -159,8 +173,6 @@ class Character(pygame.sprite.Sprite):
         self.rect.topleft = self.position
 
 
-
-
 class Player(Character):
     def __init__(self, speed, position=(0, 0), keys=ASTR_KEYS):
         super().__init__("player", position) # calls the character's constructor 
@@ -179,7 +191,6 @@ class Player(Character):
     def updatePlayerState(self):
         pass
 
-
     def update(self, platforms, camera_offset):
         pressed_keys = pygame.key.get_pressed()
         if pressed_keys[self.KEYS["left"]]:
@@ -191,7 +202,6 @@ class Player(Character):
         else:
             dir = "none"
         self.move(dir)
-
         self.apply_gravity()
         self.check_collisions(platforms, camera_offset)
         self.update_rect()
@@ -273,9 +283,6 @@ class Environment:
     def renderEnvironment(self):
         pass
  
-#Setting up Sprites        
-AstrChar = Astronaut(position=(200, 100), keys=ASTR_KEYS)
-AlienChar = Alien(position = (220, 100), keys=ALIEN_KEYS)
 
 background = pygame.image.load("assets/bg.png") 
 
@@ -288,7 +295,6 @@ class Platform(pygame.sprite.Sprite):
         self.original_position = pygame.math.Vector2(x, y)
         self.rect = self.image.get_rect(topleft=(x, y))
 
-
     # def draw(self, buffer):
     #     buffer.blit(self.image, self.rect) 
 
@@ -300,14 +306,13 @@ class Platform(pygame.sprite.Sprite):
         # self.rect.topleft = self.original_position - camera_offset
         pass
 
-def is_on_platform(character, platform): #checks if character is on platform 
+def is_on_platform(character, platform): # checks if character is on platform 
     return (character.rect.bottom == platform.rect.top and character.rect.right > platform.rect.left and character.rect.left < platform.rect.right)   
 
 platforms = pygame.sprite.Group()
 platforms.add(Platform(100, 300, 200, 20, name="starter"))
 platforms.add(Platform(100, 150, 20, 150, name="left bound"))
 platforms.add(Platform(200, 220, 200, 20, name="starter"))
-
 platforms.add(Platform(400, 150, 150, 40, name="upper right flat"))
 platforms.add(Platform(400, 100, 40, 150, name="upper right vert"))
 
@@ -316,6 +321,9 @@ platforms.add(Platform(400, 100, 40, 150, name="upper right vert"))
 INC_SPEED = pygame.USEREVENT + 1
 pygame.time.set_timer(INC_SPEED, 1000)
 
+#Setting up Sprites        
+AstrChar = Astronaut(position=(200, 100), keys=ASTR_KEYS)
+# AlienChar = Alien(position=(220, 100), keys=ALIEN_KEYS)
  
 #Game Loop
 while True:
@@ -323,9 +331,6 @@ while True:
         if event.type == QUIT:
             pygame.quit()
             sys.exit()
-
-    # BUFFER.fill(WHITE)
-    # BUFFER.blit(background, (0, 0))
 
     camera_offset = update_camera(AstrChar, camera_offset)
 
@@ -346,7 +351,7 @@ while True:
     # BUFFER.blit(AlienChar.image, AlienChar.rect)
 
     pygame.display.update()
-    FramePerSec.tick(FPS)
+    clock.tick(FPS)
 
     BUFFER.fill(WHITE)
 
