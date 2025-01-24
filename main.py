@@ -62,21 +62,21 @@ ALIEN_KEYS = {
 
 camera_offset = pygame.math.Vector2(0, 0)
 
-def update_camera(player, camera_offset):
-    """Update the camera's offset based on the player's position."""
+def update_camera(player, camera_offset): # Update the camera's offset based on the player's position
     global SCREEN_WIDTH, SCREEN_HEIGHT
 
     # Center the camera on the player
     camera_offset.x = player.rect.centerx - SCREEN_WIDTH // 2
     camera_offset.y = player.rect.centery - SCREEN_HEIGHT // 2
 
-    # Clamp camera to the bounds of the level
+    # Set camera to the bounds of the level
     camera_offset.x = max(0, min(camera_offset.x, LEVEL_WIDTH - SCREEN_WIDTH))
     camera_offset.y = max(0, min(camera_offset.y, LEVEL_HEIGHT - SCREEN_HEIGHT))
 
     return camera_offset
 
-LEVEL_WIDTH = 1000  # Level is larger than the screen
+# Level is larger than the screen
+LEVEL_WIDTH = 1000 
 LEVEL_HEIGHT = 800
 
 class Character(pygame.sprite.Sprite):
@@ -126,6 +126,9 @@ class Character(pygame.sprite.Sprite):
             self.velocity_y += GRAVITY
         y += self.velocity_y
         self.position = (x, y)
+        max_velocity = 10
+        self.velocity_y = min(self.velocity_y, max_velocity)
+
 
     def check_collisions(self, platforms, camera_offset):
         pygame.draw.rect(BUFFER, (255, 0, 0), self.rect, 2)  # Player collision box
@@ -147,7 +150,7 @@ class Character(pygame.sprite.Sprite):
                         self.rect.right = platform.rect.left
                     elif self.position[0] > platform.rect.centerx:  
                         self.rect.left = platform.rect.right
-           
+                    
                 self.position = self.rect.topleft
         
         if self.on_ground and self.velocity_y == 0:
@@ -323,7 +326,7 @@ pygame.time.set_timer(INC_SPEED, 1000)
 
 #Setting up Sprites        
 AstrChar = Astronaut(position=(200, 100), keys=ASTR_KEYS)
-# AlienChar = Alien(position=(220, 100), keys=ALIEN_KEYS)
+AlienChar = Alien(position=(220, 100), keys=ALIEN_KEYS)
  
 #Game Loop
 while True:
@@ -344,11 +347,11 @@ while True:
         pygame.draw.rect(BUFFER, (255, 0, 0), platform.rect, 2)  # Platform collision boxes
 
     AstrChar.update(platforms, camera_offset)
-    # AlienChar.update(platforms)
+    AlienChar.update(platforms, camera_offset)
 
     # Draw both characters
     BUFFER.blit(AstrChar.image, AstrChar.rect)
-    # BUFFER.blit(AlienChar.image, AlienChar.rect)
+    BUFFER.blit(AlienChar.image, AlienChar.rect)
 
     pygame.display.update()
     clock.tick(FPS)
@@ -356,3 +359,7 @@ while True:
     BUFFER.fill(WHITE)
 
     # BUFFER.blit(background, (0,0))
+    
+    network = Network()
+    data = network.send(f"{AstrChar.position[0]},{AstrChar.position[1]}")
+    AlienChar.position = [int(val) for val in data.split(",")]
