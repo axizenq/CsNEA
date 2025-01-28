@@ -15,13 +15,15 @@ vec = pygame.math.Vector2
 #Setting up FPS 
 FPS = 30
 clock = pygame.time.Clock()
-                                                                                 
+
 #Creating colors
 BLUE  = (0, 0, 255)
 RED   = (255, 0, 0)
 GREEN = (0, 255, 0)
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
+color_light = (170,170,170)  
+color_dark = (100,100,100)  
 
 #Other Variables for use in the program
 SCREEN_WIDTH = 600
@@ -157,7 +159,7 @@ class Character(pygame.sprite.Sprite):
             if self.check_falling_off() == True:
                 self.on_ground = False
                 self.standing_on = None
-                     
+
                     
     def check_falling_off(self):
         if not self.standing_on:
