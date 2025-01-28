@@ -4,6 +4,7 @@ from pygame.locals import *
 import random, time
 import json
 from network import Network 
+from menu import menu
 
 with open("character_config.json", "r") as config_file:
     CHARACTER_CONFIG = json.load(config_file)
@@ -34,21 +35,41 @@ GRAVITY = 0.5
 
 #Create a white screen 
 BUFFER = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+
 def drawWindow(BUFFER):
     BUFFER.fill(WHITE)
     pygame.display.set_caption("Game")
 
-clientNumber = 0
-
-def main():
-    run = True 
+def main_game():
+    run = True
     while run:
         clock.tick(FPS)
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 run = False
                 pygame.quit()
+                sys.exit()
+
         drawWindow(BUFFER)
+        pygame.display.update()
+
+if __name__ == "__main__":
+    # show menu first
+    action = menu()  # call the menu function
+    if action == "play":
+        main_game()  # start the main game
+
+clientNumber = 0
+
+# def main():
+#     run = True 
+#     while run:
+#         clock.tick(FPS)
+#         for event in pygame.event.get():
+#             if event.type == pygame.QUIT:
+#                 run = False
+#                 pygame.quit()
+#         drawWindow(BUFFER)
 
 ASTR_KEYS = {
     "left": K_a,  
