@@ -3,7 +3,7 @@ import pygame, sys
 from pygame.locals import *
 import random, time
 import json
-from network import Network 
+# from network import Network 
 from menu import menu
 
 with open("character_config.json", "r") as config_file:

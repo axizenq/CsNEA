@@ -1,8 +1,15 @@
 import pygame  
 import sys  
-from main import *
 
 pygame.init()  
+
+SCREEN_WIDTH = 600
+SCREEN_HEIGHT = 400
+BUFFER = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+
+WHITE = (255, 255, 255)
+color_light = (170, 170, 170)
+color_dark = (100, 100, 100)
 
 # making text
 smallfont = pygame.font.SysFont('Corbel',35)  
