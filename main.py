@@ -33,31 +33,11 @@ ACC = 0.5
 FRIC = -0.12
 GRAVITY = 0.5
 
-#Create a white screen 
 BUFFER = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
 def drawWindow(BUFFER):
     BUFFER.fill(WHITE)
     pygame.display.set_caption("Game")
-
-def main_game():
-    run = True
-    while run:
-        clock.tick(FPS)
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                run = False
-                pygame.quit()
-                sys.exit()
-
-        drawWindow(BUFFER)
-        pygame.display.update()
-
-if __name__ == "__main__":
-    # show menu first
-    action = menu()  # call the menu function
-    if action == "play":
-        main_game()  # start the main game
 
 clientNumber = 0
 
@@ -351,38 +331,55 @@ pygame.time.set_timer(INC_SPEED, 1000)
 AstrChar = Astronaut(position=(200, 100), keys=ASTR_KEYS)
 AlienChar = Alien(position=(220, 100), keys=ALIEN_KEYS)
  
-#Game Loop
-while True:
-    for event in pygame.event.get():
-        if event.type == QUIT:
-            pygame.quit()
-            sys.exit()
+def main_game():
+    run = True
+    while run:
+        clock.tick(FPS)
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                run = False
+                pygame.quit()
+                sys.exit()
 
-    camera_offset = update_camera(AstrChar, camera_offset)
+        drawWindow(BUFFER)
+        #Game Loop
+        while True:
+            for event in pygame.event.get():
+                if event.type == QUIT:
+                    pygame.quit()
+                    sys.exit()
 
-    BUFFER.fill(WHITE)
-    BUFFER.blit(background, (-camera_offset.x, -camera_offset.y))
+            camera_offset = update_camera(AstrChar, camera_offset)
 
-    for platform in platforms:
-        platform.draw(BUFFER, camera_offset)
-    
-    for platform in platforms:
-        pygame.draw.rect(BUFFER, (255, 0, 0), platform.rect, 2)  # Platform collision boxes
+            BUFFER.fill(WHITE)
+            BUFFER.blit(background, (-camera_offset.x, -camera_offset.y))
 
-    AstrChar.update(platforms, camera_offset)
-    AlienChar.update(platforms, camera_offset)
+            for platform in platforms:
+                platform.draw(BUFFER, camera_offset)
+            
+            for platform in platforms:
+                pygame.draw.rect(BUFFER, (255, 0, 0), platform.rect, 2)  # Platform collision boxes
 
-    # Draw both characters
-    BUFFER.blit(AstrChar.image, AstrChar.rect)
-    BUFFER.blit(AlienChar.image, AlienChar.rect)
+            AstrChar.update(platforms, camera_offset)
+            AlienChar.update(platforms, camera_offset)
 
-    pygame.display.update()
-    clock.tick(FPS)
+            # Draw both characters
+            BUFFER.blit(AstrChar.image, AstrChar.rect)
+            BUFFER.blit(AlienChar.image, AlienChar.rect)
 
-    BUFFER.fill(WHITE)
+            pygame.display.update()
+            clock.tick(FPS)
 
-    # BUFFER.blit(background, (0,0))
-    
-    network = Network()
-    data = network.send(f"{AstrChar.position[0]},{AstrChar.position[1]}")
-    AlienChar.position = [int(val) for val in data.split(",")]
+            BUFFER.fill(WHITE)
+
+            # BUFFER.blit(background, (0,0))
+            
+            # network = Network()
+            # data = network.send(f"{AstrChar.position[0]},{AstrChar.position[1]}")
+            # AlienChar.position = [int(val) for val in data.split(",")]
+            
+if __name__ == "__main__":
+    # show menu first
+    action = menu()  # call the menu function
+    if action == "play":
+        main_game()  # start the main game
