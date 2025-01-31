@@ -63,8 +63,6 @@ ALIEN_KEYS = {
     "up": K_UP  
 }
 
-camera_offset = pygame.math.Vector2(0, 0)
-
 def update_camera(player, camera_offset): # Update the camera's offset based on the player's position
     global SCREEN_WIDTH, SCREEN_HEIGHT
 
@@ -349,6 +347,7 @@ def main_game():
                     pygame.quit()
                     sys.exit()
 
+            camera_offset = pygame.math.Vector2(0, 0)
             camera_offset = update_camera(AstrChar, camera_offset)
 
             BUFFER.fill(WHITE)
