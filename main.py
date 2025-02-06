@@ -9,7 +9,7 @@ from menu import menu
 with open("character_config.json", "r") as config_file:
     CHARACTER_CONFIG = json.load(config_file)
     
-
+    
 #Initialzing 
 pygame.init()
 vec = pygame.math.Vector2 
@@ -362,7 +362,7 @@ class Platform(pygame.sprite.Sprite):
         super().__init__()
         self.name = name
         self.image = pygame.Surface((width, height))
-        self.image.fill(GREEN)
+        self.image.fill(WHITE)
         self.original_position = pygame.math.Vector2(x, y)
         self.rect = self.image.get_rect(topleft=(x, y))
 
@@ -493,22 +493,20 @@ class OxygenPump(Item):
             player.oxygen = 100
 
 
-
 platforms = pygame.sprite.Group()
 #                       X    Y    L    H
-platforms.add(Platform(100, 300, 200, 20, name="starter"))
-platforms.add(Platform(100, 150, 20, 150, name="left bound"))
-platforms.add(Platform(200, 220, 200, 20, name="starter"))
-platforms.add(Platform(405, 150, 150, 40, name="upper right flat"))
-platforms.add(Platform(400, 150, 40, 150, name="upper right vert"))
-platforms.add(Platform(0, 200, 40, 20, name="item platform"))
+platforms.add(Platform(0, 380, 1000, 20, name="ground"))
+# Elevated platforms
+platforms.add(Platform(200, 300, 200, 20, name="platform1"))
+platforms.add(Platform(500, 250, 200, 20, name="platform2"))
+platforms.add(Platform(300, 200, 200, 20, name="platform3"))
+platforms.add(Platform(700, 300, 200, 20, name="right_platform"))
 
 items = pygame.sprite.Group()
-# items.add(Money(1, (410, 200)))
-items.add(Money("money bags"))
-items.add(OxygenPump("Oxygen pump 1", position=(480, 100)))
-
-
+# Place items on platforms
+items.add(Money("money1", (300, 250)))          # On platform1
+items.add(OxygenPump("oxygen1", (550, 200)))    # On platform2
+items.add(Money("money2", (750, 280)))          # On right_platform
 
 # #Setting up Sprites        
 AstrChar = Astronaut(position=(200, 100), keys=ASTR_KEYS)
@@ -516,7 +514,6 @@ AlienChar = Alien(position=(220, 100), keys=ALIEN_KEYS)
  
 def main_game():
     run = True
-    
     
     # with open("world.json", "r") as config_file:
     #     world_config = json.load(config_file)
