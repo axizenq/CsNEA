@@ -5,8 +5,10 @@ import random, time, math
 import json
 # from network import Network 
 from menu import menu
+from level_select import level_menu
+from lost_screen import lost_screen
 
-with open('character_config.json', 'r') as config_file:
+with open("character_config.json", "r") as config_file:
     CHARACTER_CONFIG = json.load(config_file)
     
     
@@ -35,6 +37,8 @@ font = pygame.font.Font(None, 24)  # Default font, size 24
 #Other Variables for use in the program
 SCREEN_WIDTH = 600
 SCREEN_HEIGHT = 400
+# SCREEN_WIDTH = 1000
+# SCREEN_HEIGHT = 800
 ACC = 0.5
 FRIC = -0.12
 GRAVITY = 0.5
@@ -49,46 +53,68 @@ BUFFER = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 
 def drawWindow(BUFFER):
     BUFFER.fill(WHITE)
-    pygame.display.set_caption('Game')
+    pygame.display.set_caption("Game")
 
 clientNumber = 0
 
 ASTR_KEYS = {
-    'left': K_a,  
-    'right': K_d,  
-    'up': K_w,
-    'interact' : K_SPACE
+    "left": K_a,  
+    "right": K_d,  
+    "up": K_w,
+    "interact" : K_SPACE
 }
 
 ALIEN_KEYS = {
-    'left': K_LEFT,  
-    'right': K_RIGHT,  
-    'up': K_UP,
-    'interact' : K_KP_ENTER
+    "left": K_LEFT,  
+    "right": K_RIGHT,  
+    "up": K_UP,
+    "interact" : K_KP_ENTER
 }
 
-# def update_camera(player, camera_offset): # Update the camera's offset based on the player's position
-#     global SCREEN_WIDTH, SCREEN_HEIGHT
+def update_camera(player, camera_offset): # Update the camera's offset based on the player's position
+    global SCREEN_WIDTH, SCREEN_HEIGHT
 
-#     # Center the camera on the player
-#     camera_offset.x = player.rect.centerx - SCREEN_WIDTH // 2
-#     camera_offset.y = player.rect.centery - SCREEN_HEIGHT // 2
+    # Center the camera on the player
+    camera_offset.x = player.rect.centerx - SCREEN_WIDTH // 2
+    camera_offset.y = player.rect.centery - SCREEN_HEIGHT // 2
 
-#     # Set camera to the bounds of the level
-#     camera_offset.x = max(0, min(camera_offset.x, LEVEL_WIDTH - SCREEN_WIDTH))
-#     camera_offset.y = max(0, min(camera_offset.y, LEVEL_HEIGHT - SCREEN_HEIGHT))
+    # Set camera to the bounds of the level
+    camera_offset.x = max(0, min(camera_offset.x, LEVEL_WIDTH - SCREEN_WIDTH))
+    camera_offset.y = max(0, min(camera_offset.y, LEVEL_HEIGHT - SCREEN_HEIGHT))
 
-#     return camera_offset
+    return camera_offset
+
+class Camera:
+    def __init__(self, width, height):
+        self.camera = pygame.Rect(0, 0, width, height)
+        self.width = width
+        self.height = height
+
+    def apply(self, entity):
+        return entity.rect.move(self.camera.topleft)
+
+    def update(self, target):
+        x = -target.rect.centerx + int(SCREEN_WIDTH / 2)
+        y = -target.rect.centery + int(SCREEN_HEIGHT / 2)
+
+        x = min(0, x)  # Left
+        y = min(0, y)  # Top
+        x = max(-(self.width - SCREEN_WIDTH), x)  # Right
+        y = max(-(self.height - SCREEN_HEIGHT), y)  # Bottom
+
+        self.camera = pygame.Rect(x, y, self.width, self.height)
+
 
 # Level is larger than the screen
-LEVEL_WIDTH = 1200  
-ROOM_WIDTH = 300 
-current_sublevel = 0  # Starting in the first sub-level (room 0)
+LEVEL_WIDTH = 1000 
+LEVEL_HEIGHT = 800
+
+camera = Camera(LEVEL_WIDTH, LEVEL_HEIGHT)
 
 class Character(pygame.sprite.Sprite):
     def __init__(self, characterType, position=(0, 0)):
         self.position = position  # (x, y) coordinates of the players
-        self.speed = CHARACTER_CONFIG.get(characterType, {}).get('speed', 5) # movement speed
+        self.speed = CHARACTER_CONFIG.get(characterType, {}).get("speed", 5) # movement speed
         self.velocity_y = 0
         self.characterType = characterType
 
@@ -139,11 +165,11 @@ class Character(pygame.sprite.Sprite):
 
 
     def check_collisions(self, platforms, camera_offset):
-        pygame.draw.rect(BUFFER, (255, 0, 0), self.rect, 2)  # Player collision box
+        # pygame.draw.rect(BUFFER, (255, 0, 0), self.rect, 2)  # Player collision box
         
         for platform in platforms:
             if self.rect.colliderect(platform.rect):
-                print('collided at -> ', platform.name, ' velocity_y -> ', self.velocity_y, ' postion ', self.position)
+                print("collided at -> ", platform.name, " velocity_y -> ", self.velocity_y, " postion ", self.position)
                 
                 if self.velocity_y > 0 and self.rect.bottom <= platform.rect.top + 10:
                     self.rect.bottom = platform.rect.top
@@ -191,7 +217,7 @@ class Character(pygame.sprite.Sprite):
 
 class Player(Character):
     def __init__(self, speed, position=(0, 0), keys=ASTR_KEYS):
-        super().__init__('player', position) # calls the character's constructor 
+        super().__init__("player", position) # calls the character's constructor 
         self.width = 30
         self.height = 40
         self.left = False
@@ -206,7 +232,7 @@ class Player(Character):
             print(f'item {item.id} found at {item.position}, my postion at {self.position} our distance = {self.getDistance(item.position)}')
             # if self.getDistance(item.position) < 25:
             if self.getDistance(item.position) < 31:
-                print('can interact with item!')
+                print("can interact with item!")
                 item.interaction(self)
 
 
@@ -219,17 +245,17 @@ class Player(Character):
     def update(self, platforms, items, camera_offset):
         pressed_keys = pygame.key.get_pressed()
         key_strokes = []
-        if pressed_keys[self.KEYS['left']]:
-            key_strokes.append('left')
-        if pressed_keys[self.KEYS['right']]:
-            key_strokes.append('right')
-        if pressed_keys[self.KEYS['up']]:
-            key_strokes.append('up')
+        if pressed_keys[self.KEYS["left"]]:
+            key_strokes.append("left")
+        if pressed_keys[self.KEYS["right"]]:
+            key_strokes.append("right")
+        if pressed_keys[self.KEYS["up"]]:
+            key_strokes.append("up")
             
         for direction in key_strokes:
             self.move(direction)
         
-        if pressed_keys[self.KEYS['interact']]:
+        if pressed_keys[self.KEYS["interact"]]:
             self.interact(items)
             
         self.apply_gravity()
@@ -239,19 +265,19 @@ class Player(Character):
 
 class Enemy(Character):
     def __init__(self, position=(0, 0)):
-        super().__init__('enemy', position)
+        super().__init__("enemy", position)
 
-        self.image = pygame.image.load('Enemy.png')
+        self.image = pygame.image.load("Enemy.png")
         self.rect = self.image.get_rect()
         self.rect.center = (random.randint(40, SCREEN_WIDTH-40), 0)  
 
 class Alien(Player):
-    def __init__(self, position=(0, 0), keys=ASTR_KEYS, speed=5, phaseAbilityDuration=10, shapeShiftState='default'):
+    def __init__(self, position=(0, 0), keys=ASTR_KEYS, speed=5, phaseAbilityDuration=10, shapeShiftState="default"):
         super().__init__(speed, position, keys)  # calls the player's constructor
-        self.playerType = 'alien'
+        self.playerType = "alien"
         self.phaseAbilityDuration = phaseAbilityDuration 
         self.shapeShiftState = shapeShiftState
-        self.image = pygame.image.load('assets/alien_still.png')  
+        self.image = pygame.image.load("assets/alien_still.png")  
         self.image = pygame.transform.scale(self.image, (30, 40))
         self.rect = self.image.get_rect()
         self.rect.topleft = position
@@ -265,7 +291,7 @@ class Alien(Player):
 class Astronaut(Player):
     def __init__(self, position=(0, 0), keys=ASTR_KEYS, speed=5, oxygenLevel=100, toolbox=None, currentEnvironment="space_station"):
         super().__init__(speed, position, keys)  # calls the player's constructor
-        self.playerType = 'astronaut'
+        self.playerType = "astronaut"
         self.baseSpeed = speed             # base speed (used on the space station, matches the alien's)
         self.oxygenLevel = oxygenLevel     
         self.toolbox = toolbox if toolbox is not None else []  # toolbox is an empty list, updates as the player gets items
@@ -273,8 +299,13 @@ class Astronaut(Player):
         self.rfid_use = False  # boolean flag for RFID scanner usage
         self.rfid_detectable = []  # list to store detected items or enemies
         self.lastDepletionTime = time.time() #tracks the time oxygen was last depleted
+        
+        self.show_inventory = False
+        self.inventory_open = False
+        self.inventory_size = 4  
+        self.selected_slot = 0
 
-        self.image = pygame.image.load('assets/astronaut_still.png')
+        self.image = pygame.image.load("assets/astronaut_still.png")
         self.image = pygame.transform.scale(self.image, (30, 40))
         self.rect = self.image.get_rect()
         self.rect.topleft = position
@@ -296,6 +327,36 @@ class Astronaut(Player):
                 oxygenLevel -= 1
         return oxygenLevel
         #oxygen is depleted by 1% every 2 seconds, will stop depleting after it reaches 0
+        
+    # def draw_inventory(self, buffer, camera):
+    #     if self.show_inventory:
+    #         # Calculate screen position
+    #         screen_pos = camera.apply(self)
+            
+    #         # Inventory panel dimensions
+    #         panel_width = 150
+    #         panel_height = 50
+    #         slot_size = 32
+            
+    #         # Position above player's head
+    #         inv_x = screen_pos.x - panel_width//2 + self.rect.width//2
+    #         inv_y = screen_pos.y - panel_height - 20
+            
+    #         # Draw background
+    #         pygame.draw.rect(buffer, DARK_BLUE, (inv_x, inv_y, panel_width, panel_height), border_radius=5)
+    #         pygame.draw.rect(buffer, GREY, (inv_x, inv_y, panel_width, panel_height), 2, border_radius=5)
+            
+    #         # Draw slots
+    #         slot_spacing = 5
+    #         start_x = inv_x + slot_spacing
+    #         for i in range(4):
+    #             slot_rect = pygame.Rect(start_x + i*(slot_size+slot_spacing), inv_y + slot_spacing, slot_size, slot_size)
+    #             pygame.draw.rect(buffer, color_light, slot_rect, border_radius=3)
+                
+    #             # Draw items if present
+    #             if i < len(self.toolbox):
+    #                 item_img = pygame.transform.scale(self.toolbox[i].image, (slot_size, slot_size))
+    #                 buffer.blit(item_img, slot_rect.topleft)
 
     def repairObject(self): #use tools to repair or interact with objects
         pass
@@ -308,28 +369,32 @@ class Astronaut(Player):
     def scanWithRFID(self, items_on_screen):
         self.rfid_detectable = items_on_screen
 
-        overlay = "\n".join(f'Detected: {item}' for item in self.rfid_detectable)
-        print('RFID Scan Results:\n' + overlay)
+        overlay = "\n".join(f"Detected: {item}" for item in self.rfid_detectable)
+        print("RFID Scan Results:\n" + overlay)
         pygame.time.wait(1000) #duration of the scan
         self.rfid_use = False #finishes the scan
 
-    def draw(self, platforms, items, camera_offset, BUFFER):
-        self.update(platforms, items, camera_offset)
-        BUFFER.blit(self.image, self.rect)
-        
-        ox_bar_x = self.rect.x + (self.rect.width - self.oxygen_bar_width) // 2
-        ox_bar_y = self.rect.y - 10 
-        pygame.draw.rect(BUFFER, GREY, (ox_bar_x, ox_bar_y, self.oxygen_bar_width, self.oxygen_bar_height), border_radius=5)
-        pygame.draw.rect(BUFFER, BLUE, (ox_bar_x, ox_bar_y, self.oxygen_bar_width * (self.oxygen / self.oxygen_max), self.oxygen_bar_height), border_radius=5)
 
-        ox_text = f'Oxygen: {self.oxygen}/{self.oxygen_max}'
+    def draw(self, platforms, items, camera_offset, BUFFER, camera):
+        self.update(platforms, items, camera_offset)
+        
+        screen_pos = camera.apply(self)
+
+        BUFFER.blit(self.image, screen_pos)  # Draw player sprite at adjusted position
+
+        ox_bar_x = screen_pos.x + (self.rect.width - self.oxygen_bar_width) // 2
+        ox_bar_y = screen_pos.y - 10  
+        pygame.draw.rect(BUFFER, GREY, (ox_bar_x, ox_bar_y, self.oxygen_bar_width, self.oxygen_bar_height), border_radius=5)
+        pygame.draw.rect(BUFFER, DARK_BLUE, (ox_bar_x, ox_bar_y, self.oxygen_bar_width * (self.oxygen / self.oxygen_max), self.oxygen_bar_height), border_radius=5)
+
+        ox_text = f"Oxygen: {self.oxygen}/{self.oxygen_max}"
         ox_text_surface = font.render(ox_text, True, BLACK)  
         ox_text_x = ox_bar_x + (self.oxygen_bar_width - ox_text_surface.get_width()) // 2
         ox_text_y = ox_bar_y - 15  
         # BUFFER.blit(ox_text_surface, (ox_text_x, ox_text_y))
-        
-        hp_bar_x = self.rect.x + (self.rect.width - self.hp_bar_width) // 2
-        hp_bar_y = self.rect.y - 20 
+
+        hp_bar_x = screen_pos.x + (self.rect.width - self.hp_bar_width) // 2
+        hp_bar_y = screen_pos.y - 20 
         pygame.draw.rect(BUFFER, RED, (hp_bar_x, hp_bar_y, self.hp_bar_width, self.hp_bar_height), border_radius=5)
         pygame.draw.rect(BUFFER, GREEN, (hp_bar_x, hp_bar_y, self.hp_bar_width * (self.player_hp / self.player_max_hp), self.hp_bar_height), border_radius=5)
 
@@ -340,9 +405,47 @@ class Astronaut(Player):
         # BUFFER.blit(text_surface, (text_x, text_y))
 
 
+class World:
+    def __init__(self, load = True, level = 1):
+        self.level = level
+        self.background = None
+        self.ambientSound = None
+        self.platforms = pygame.sprite.Group()
+        self.items = pygame.sprite.Group()
+        self.itemTypes = {
+                "Item": Item,
+                 "Money": Money,
+                 "OxygenPump": OxygenPump,
+                 'PressurePlate': PressurePlate,
+                 'BareRock': BareRock,
+                 'MossyRock': MossyRock
+                 }
+
+        self.ast_start = None
+        self.alien_start = None
+
+        if load == True:
+            self.loadWorld(self.level)
+
+    def loadWorld(self, level):
+        with open("world.json", "r") as config_file:
+            WORLD_CONFIG = json.load(config_file)
+
+        self.background = pygame.image.load(WORLD_CONFIG[level]["background"])
+        
+        for platform_name, platform_data in WORLD_CONFIG[level]["platforms"].items():
+            self.platforms.add(Platform(*platform_data, name = platform_name))
+            
+        for item_name, item_data in WORLD_CONFIG[level]["items"].items():
+            self.items.add(self.itemTypes[WORLD_CONFIG[level]["items"][item_name]["type"]](item_name, WORLD_CONFIG[level]["items"][item_name]["position"]))
+
+        self.ast_start = WORLD_CONFIG[level]["astronaut"]["position"]
+        self.alien_start = WORLD_CONFIG[level]["alien"]["position"]
+
 class Environment:
     def __init__(self, gravity, background, ambientSound):
         self.gravity = gravity
+
         
     def applyGravity(self, gravity):
         pass
@@ -354,10 +457,10 @@ class Environment:
         pass
  
 
-background = pygame.image.load('assets/bg.png') 
+# background = pygame.image.load("assets/bg.png") 
 
 class Platform(pygame.sprite.Sprite):
-    def __init__(self, x, y, width, height, name='none'):
+    def __init__(self, x, y, width, height, name="none"):
         super().__init__()
         self.name = name
         self.image = pygame.Surface((width, height))
@@ -368,16 +471,13 @@ class Platform(pygame.sprite.Sprite):
     # def draw(self, buffer):
     #     buffer.blit(self.image, self.rect) 
 
-    def draw(self, buffer, camera_offset):
+    def draw(self, buffer, camera_offset, camera):
         self.updateRect(camera_offset)
-        buffer.blit(self.image, self.rect) 
+        buffer.blit(self.image, camera.apply(self)) 
 
     def updateRect(self, camera_offset):
         # self.rect.topleft = self.original_position - camera_offset
         pass
-
-def is_on_platform(character, platform): # checks if character is on platform 
-    return (character.rect.bottom == platform.rect.top and character.rect.right > platform.rect.left and character.rect.left < platform.rect.right)   
 
 
 class Item(pygame.sprite.Sprite):
@@ -396,9 +496,9 @@ class Item(pygame.sprite.Sprite):
 
         self.heldBy = None
     
-    def draw(self, buffer, camera_offset):
+    def draw(self, buffer, camera_offset, camera):
         self.updateRect(camera_offset)
-        buffer.blit(self.image, self.rect) 
+        buffer.blit(self.image, camera.apply(self)) 
            
     def updateRect(self, camera_offset):
         # self.rect.topleft = self.original_position - camera_offset
@@ -414,18 +514,21 @@ class Item(pygame.sprite.Sprite):
         self.velocity_y = min(self.velocity_y, max_velocity)
 
     def check_collisions(self, platforms, camera_offset):
-        pygame.draw.rect(BUFFER, (255, 0, 0), self.rect, 2)  # Player collision box
+        # pygame.draw.rect(BUFFER, (255, 0, 0), self.rect, 2)  # Player collision box
         
 
         for platform in platforms:
             if self.rect.colliderect(platform.rect):
-                print('collided at -> ', platform.name, ' velocity_y -> ', self.velocity_y, ' position ', self.position)
+                print("collided at -> ", platform.name, " velocity_y -> ", self.velocity_y, " postion ", self.position)
                 
                 if self.velocity_y > 0 and self.rect.bottom <= platform.rect.top + 10:
                     self.rect.bottom = platform.rect.top
                     self.velocity_y = 0
                     self.on_ground = True
                     self.standing_on = platform
+
+                    
+                    
 
                 elif self.rect.right >= platform.rect.left and self.rect.left <= platform.rect.right:
                     if self.position[0] < platform.rect.centerx:  
@@ -450,7 +553,7 @@ class Item(pygame.sprite.Sprite):
         self.rect.topleft = self.position
     
     def interaction(self):
-        print('generic interaction')
+        print("generic interaction")
     
     def pickup(self, player):
         self.heldBy = player
@@ -465,10 +568,11 @@ class Item(pygame.sprite.Sprite):
 class Money(Item):
     def __init__(self, id, position=(0, 0)):
         super().__init__(id, position)
-        self.image = pygame.image.load('assets/pouch.png')  
+        self.image = pygame.image.load("assets/pouch.png")  
         self.image = pygame.transform.scale(self.image, (30, 40))
         self.rect = self.image.get_rect()
         self.rect.topleft = position
+        self.type = "money"
 
     def interaction(self, player):
         if self.heldBy != player:
@@ -479,158 +583,170 @@ class Money(Item):
 class OxygenPump(Item):
     def __init__(self, id, position=(0, 0)):
         super().__init__(id, position)
-        self.image = pygame.image.load('assets/oxygen_station.png')  
+        self.image = pygame.image.load("assets/oxygen_station.png")  
         self.image = pygame.transform.scale(self.image, (30, 60))
         self.rect = self.image.get_rect()
         self.rect.topleft = position
+        self.type = "money"
+
         
     def interaction(self, player):
-        if player.playerType == 'astronaut':
+        if player.playerType == "astronaut":
             player.oxygen = 100
+            
+class BareRock(Item):
+    def __init__(self, id, position=(0, 0)):
+        super().__init__(id, position)
+        self.image = pygame.image.load("assets/bare_rock.png")  
+        self.image = pygame.transform.scale(self.image, (30, 40))
+        self.rect = self.image.get_rect()
+        self.rect.topleft = position
+        self.weight = 2
+        self.type = 'rock'
+
+    def interaction(self, player):
+        if self.heldBy != player:
+            self.pickup(player)
+        else:
+            self.drop()
+            
+class MossyRock(Item):
+    def __init__(self, id, position=(0, 0)):
+        super().__init__(id, position)
+        self.image = pygame.image.load("assets/mossy_rock.png")  
+        self.image = pygame.transform.scale(self.image, (30, 40))
+        self.rect = self.image.get_rect()
+        self.rect.topleft = position
+        self.weight = 4
+        self.type = 'rock'
+
+    def interaction(self, player):
+        if self.heldBy != player:
+            self.pickup(player)
+        else:
+            self.drop()
+            
+class PressurePlate(Item):
+    def __init__(self, id, position=(0, 0)):
+        super().__init__(id, position)
+        self.image = pygame.image.load('assets/pressure_plate.png')
+        self.image = pygame.transform.scale(self.image, (30, 60))
+        self.rect = self.image.get_rect()
+        self.rect.topleft = position
+        self.weight = 0
+        self.type = "money"
+
+    
+    def interaction(self, world):
+        self.weight = 0
+        for item in  world.items:
+            if item.type == 'rock':
+                if item.rect.centerx >= self.rect.left and item.rect.centerx < self.rect.right:
+                    self.weight += item.weight
+        print(self.weight)
+    
 
 
-platforms = pygame.sprite.Group()
-#                       X    Y    L    H
-# platforms.add(Platform(0, 380, 1000, 20, name='ground'))
-# Elevated platforms
-# platforms.add(Platform(200, 300, 200, 20, name='platform1'))
-# platforms.add(Platform(500, 250, 200, 20, name='platform2'))
-# platforms.add(Platform(300, 200, 200, 20, name='platform3'))
-# platforms.add(Platform(700, 300, 200, 20, name='right_platform'))
 
-sublevels = [
-    [Platform(50, 300, 200, 20, name="room1_platform1"), Platform(300, 250, 100, 20, name="room1_platform2")],
-    [Platform(50, 300, 150, 20, name="room2_platform1"), Platform(250, 200, 150, 20, name="room2_platform2")],
-    [Platform(100, 350, 200, 20, name="room3_platform1")],
-    [Platform(50, 300, 200, 20, name="room4_platform1"), Platform(300, 250, 150, 20, name="room4_platform2")]
-]
+# platforms = pygame.sprite.Group()
+# #                       X    Y    L    H
+# platforms.add(Platform(0, 380, 1000, 20, name="ground"))
+# # Elevated platforms
+# platforms.add(Platform(200, 300, 200, 20, name="platform1"))
+# platforms.add(Platform(500, 250, 200, 20, name="platform2"))
+# platforms.add(Platform(300, 200, 200, 20, name="platform3"))
+# platforms.add(Platform(700, 300, 200, 20, name="right_platform"))
 
-items = pygame.sprite.Group()
-# Place items on platforms
-items.add(Money('money1', (300, 250)))          # On platform1
-items.add(OxygenPump('oxygen1', (550, 200)))    # On platform2
-items.add(Money('money2', (750, 280)))          # On right_platform
+# items = pygame.sprite.Group()
+# # Place items on platforms
+# items.add(Money("money1", (300, 250)))          # On platform1
+# items.add(OxygenPump("oxygen1", (550, 200)))    # On platform2
+# items.add(Money("money2", (750, 280)))          # On right_platform
 
 # #Setting up Sprites        
-AstrChar = Astronaut(position=(200, 100), keys=ASTR_KEYS)
-AlienChar = Alien(position=(220, 100), keys=ALIEN_KEYS)
-
-
-def load_room(room_index):
-    global platforms
-    # Update the platforms group with the new room's platforms
-    platforms.empty()  # Remove existing platforms
-    for platform in sublevels[room_index]:
-        platforms.add(platform)
-    # Optionally reposition the player to the start of the room
-    AstrChar.position = (room_index * ROOM_WIDTH + 50, AstrChar.position[1])
-    AstrChar.update_rect()
-    print(f"Transitioned to room {room_index}")
-    
+# AstrChar = Astronaut(position=(200, 100), keys=ASTR_KEYS)
+# AlienChar = Alien(position=(220, 100), keys=ALIEN_KEYS)
  
-def main_game():
-    while True:
+def main_game(level):
+    run = True
+
+    world = World(level = level)
+    AstrChar = Astronaut(position=world.ast_start, keys=ASTR_KEYS)
+    AlienChar = Alien(position=world.alien_start, keys=ALIEN_KEYS)
+
+    clock.tick(FPS)
+
+
+    drawWindow(BUFFER)
+    #Game Loop
+    pygame.time.set_timer(OXYGEN_DECREASE_EVENT, 1000)
+
+    while run:
         for event in pygame.event.get():
             if event.type == QUIT:
                 pygame.quit()
                 sys.exit()
+            elif event.type == OXYGEN_DECREASE_EVENT:
+                if AstrChar.oxygen > 9:
+                    AstrChar.oxygen -= 1
+                for item in  world.items:
+                    if item.id == 'pressureplate1':
+                        item.interaction(world)
 
-    # Update player and other game elements
-    AstrChar.update(platforms, None)  
-    AlienChar.update(platforms, None)  
+        camera_offset = pygame.math.Vector2(0, 0)
+        camera_offset = update_camera(AstrChar, camera_offset)
 
-    # Check for room transition
-    if AstrChar.position[0] >= ((current_sublevel + 1) * ROOM_WIDTH - transition_margin):
-        if current_sublevel < len(sublevels) - 1:
-            current_sublevel += 1
-            load_room(current_sublevel)
-
-    BUFFER.fill(WHITE)
-    BUFFER.blit(background, (0, 0))
-
-    for platform in platforms:
-        platform.draw(BUFFER, None)  
-    BUFFER.blit(AstrChar.image, AstrChar.rect)
-    BUFFER.blit(AlienChar.image, AlienChar.rect)
-
-    pygame.display.update()
-    clock.tick(FPS)
-
-    # run = True
-    
-    # with open("world.json", "r") as config_file:
-    #     world_config = json.load(config_file)
-    
-    # platforms = pygame.sprite.Group()
-    # for platform_name, platform_data in world_config["platforms"].items():
-    #     platforms.add(Platform(*platform_data, name=platform_name))
-        # with open("world.json", "r") as config_file:
-    #     world_config = json.load(config_file)
-    
-    # platforms = pygame.sprite.Group()
-    # for platform_name, platform_data in world_config["platforms"].items():
-    #     platforms.add(Platform(*platform_data, name=platform_name))
-    
-    # while run:
-    #     clock.tick(FPS)
-    #     for event in pygame.event.get():
-    #         if event.type == pygame.QUIT:
-    #             run = False
-    #             pygame.quit()
-    #             sys.exit()
-
-    #     drawWindow(BUFFER)
-    #     #Game Loop
-    #     pygame.time.set_timer(OXYGEN_DECREASE_EVENT, 1000)
-
-    #     while True:
-    #         for event in pygame.event.get():
-    #             if event.type == QUIT:
-    #                 pygame.quit()
-    #                 sys.exit()
-    #             elif event.type == OXYGEN_DECREASE_EVENT:
-    #                 if AstrChar.oxygen > 10:
-    #                     AstrChar.oxygen -= 10
-
-    #         camera_offset = pygame.math.Vector2(0, 0)
-    #         camera_offset = update_camera(AstrChar, camera_offset)
-
-    #         BUFFER.fill(WHITE)
-    #         BUFFER.blit(background, (-camera_offset.x, -camera_offset.y))
+        BUFFER.fill(WHITE)
+        BUFFER.blit(world.background, (-camera_offset.x, -camera_offset.y))
 
 
 
-    #         for platform in platforms:
+        for platform in world.platforms:
+            
+            platform.draw(BUFFER, camera_offset, camera)
+        
+
+        for item in world.items:
+            item.update(world.platforms, camera_offset)
+            item.draw(BUFFER, camera_offset, camera)
+
+        camera.update(AstrChar)
+
+        # Draw both characters
+        AstrChar.draw(world.platforms, world.items, camera_offset, BUFFER, camera)
+        
+        AlienChar.update(world.platforms, world.items, camera_offset)
+
+
+        BUFFER.blit(AlienChar.image, camera.apply(AlienChar))
+
+        pygame.display.update()
+        clock.tick(FPS)
+
+        BUFFER.fill(WHITE)
+
+        # BUFFER.blit(background, (0,0))
+        
+        # network = Network()
+        # data = network.send(f"{AstrChar.position[0]},{AstrChar.position[1]}")
+        # AlienChar.position = [int(val) for val in data.split(",")]
+        # print(f'AstrChar.oxygen = {AstrChar.oxygen}')
+        if AstrChar.oxygen <= 0:
+            print("ASTO OUT OF OXYGEN!")
+            return "loss"
+            
+if __name__ == "__main__":
+    on = True
+    while on:
+        action = menu()
+        
+        if action == "play":
+            level = level_menu()
+            
+            if level != "back":
+                finished = main_game(level)
                 
-    #             platform.draw(BUFFER, camera_offset)
-            
-    #         for platform in platforms:
-    #             pygame.draw.rect(BUFFER, (255, 0, 0), platform.rect, 2)  # Platform collision boxes
-
-    #         for item in items:
-    #             item.update(platforms, camera_offset)
-    #             item.draw(BUFFER, camera_offset)
-
-
-    #         # Draw both characters
-    #         AstrChar.draw(platforms, items, camera_offset, BUFFER)
-            
-    #         AlienChar.update(platforms, items, camera_offset)
-    #         BUFFER.blit(AlienChar.image, AlienChar.rect)
-
-    #         pygame.display.update()
-    #         clock.tick(FPS)
-
-    #         BUFFER.fill(WHITE)
-
-            # BUFFER.blit(background, (0,0))
-            
-            # network = Network()
-            # data = network.send(f"{AstrChar.position[0]},{AstrChar.position[1]}")
-            # AlienChar.position = [int(val) for val in data.split(",")]
-            
-if __name__ == '__main__':
-    # show menu first
-    action = menu()  # call the menu function
-    if action == 'play':
-        main_game()  # start the main game
+                if finished == "loss":
+                    lost_menu = lost_screen()
+                    if lost_menu == "continue":
+                        pass

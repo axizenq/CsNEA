@@ -11,6 +11,10 @@ WHITE = (255, 255, 255)
 color_light = (170, 170, 170)
 color_dark = (100, 100, 100)
 
+BUTTON_WIDTH = 200
+BUTTON_HEIGHT = 50
+BUTTON_SPACING = 70 
+
 # making text
 smallfont = pygame.font.SysFont('Corbel',35)  
 text = smallfont.render('quit' , True , WHITE) 
@@ -30,34 +34,38 @@ def menu():
             # check if mouse is clicked
             if event.type == pygame.MOUSEBUTTONDOWN:
                 mouse = pygame.mouse.get_pos()
-                # check if the play button is clicked
-                if SCREEN_WIDTH / 2 <= mouse[0] <= SCREEN_WIDTH / 2 + 140 and SCREEN_HEIGHT / 2 <= mouse[1] <= SCREEN_HEIGHT / 2 + 40:
+
+                button_x = (SCREEN_WIDTH - BUTTON_WIDTH) // 2
+                button_y = (SCREEN_HEIGHT - (3 * BUTTON_SPACING)) // 2  
+                
+                if button_x <= mouse[0] <= button_x + BUTTON_WIDTH and button_y <= mouse[1] <= button_y + BUTTON_HEIGHT:
                     return "play"  
-                # check if the quit button is clicked
-                if SCREEN_WIDTH / 2 <= mouse[0] <= SCREEN_WIDTH / 2 + 140 and SCREEN_HEIGHT / 2 + 60 <= mouse[1] <= SCREEN_HEIGHT / 2 + 100:
+
+                if button_x <= mouse[0] <= button_x + BUTTON_WIDTH and button_y + BUTTON_SPACING <= mouse[1] <= button_y + BUTTON_SPACING + BUTTON_HEIGHT:
                     pygame.quit()
                     sys.exit()
 
-        # fill the screen
         BUFFER.fill((60, 25, 60))
 
-        # get mouse position
         mouse = pygame.mouse.get_pos()
 
-        # play button hovered
-        if SCREEN_WIDTH / 2 <= mouse[0] <= SCREEN_WIDTH / 2 + 140 and SCREEN_HEIGHT / 2 <= mouse[1] <= SCREEN_HEIGHT / 2 + 40:
-            pygame.draw.rect(BUFFER, color_light, [SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, 140, 40])
-        else:
-            pygame.draw.rect(BUFFER, color_dark, [SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, 140, 40])
+        button_x = (SCREEN_WIDTH - BUTTON_WIDTH) // 2
+        button_y = (SCREEN_HEIGHT - (3 * BUTTON_SPACING)) // 2  
 
-        # quit button hovered
-        if SCREEN_WIDTH / 2 <= mouse[0] <= SCREEN_WIDTH / 2 + 140 and SCREEN_HEIGHT / 2 + 60 <= mouse[1] <= SCREEN_HEIGHT / 2 + 100:
-            pygame.draw.rect(BUFFER, color_light, [SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 60, 140, 40])
-        else:
-            pygame.draw.rect(BUFFER, color_dark, [SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2 + 60, 140, 40])
+        buttons = [
+            ("Play", button_y),
+            ("Quit", button_y + BUTTON_SPACING),
+        ]
 
-        # render button texts
-        BUFFER.blit(play_text, (SCREEN_WIDTH / 2 + 40, SCREEN_HEIGHT / 2))
-        BUFFER.blit(quit_text, (SCREEN_WIDTH / 2 + 40, SCREEN_HEIGHT / 2 + 60))
+        for text, y in buttons:
+            if button_x <= mouse[0] <= button_x + BUTTON_WIDTH and y <= mouse[1] <= y + BUTTON_HEIGHT:
+                pygame.draw.rect(BUFFER, color_light, [button_x, y, BUTTON_WIDTH, BUTTON_HEIGHT])
+            else:
+                pygame.draw.rect(BUFFER, color_dark, [button_x, y, BUTTON_WIDTH, BUTTON_HEIGHT])
+
+            text_surface = smallfont.render(text, True, WHITE)
+            text_x = button_x + (BUTTON_WIDTH - text_surface.get_width()) // 2
+            text_y = y + (BUTTON_HEIGHT - text_surface.get_height()) // 2
+            BUFFER.blit(text_surface, (text_x, text_y))
 
         pygame.display.update()
