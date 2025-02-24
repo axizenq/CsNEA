@@ -37,8 +37,6 @@ font = pygame.font.Font(None, 24)  # Default font, size 24
 #Other Variables for use in the program
 SCREEN_WIDTH = 600
 SCREEN_HEIGHT = 400
-# SCREEN_WIDTH = 1000
-# SCREEN_HEIGHT = 800
 ACC = 0.5
 FRIC = -0.12
 GRAVITY = 0.5
@@ -328,35 +326,45 @@ class Astronaut(Player):
         return oxygenLevel
         #oxygen is depleted by 1% every 2 seconds, will stop depleting after it reaches 0
         
-    # def draw_inventory(self, buffer, camera):
-    #     if self.show_inventory:
-    #         # Calculate screen position
-    #         screen_pos = camera.apply(self)
+    def draw_inventory(self, buffer, camera):
+        if self.show_inventory:
+            # Calculate screen position
+            screen_pos = camera.apply(self)
             
-    #         # Inventory panel dimensions
-    #         panel_width = 150
-    #         panel_height = 50
-    #         slot_size = 32
+            # Inventory panel dimensions
+            panel_width = 150
+            panel_height = 50
+            slot_size = 32
             
-    #         # Position above player's head
-    #         inv_x = screen_pos.x - panel_width//2 + self.rect.width//2
-    #         inv_y = screen_pos.y - panel_height - 20
+            # Position above player's head
+            inv_x = screen_pos.x - panel_width//2 + self.rect.width//2
+            inv_y = screen_pos.y - panel_height - 20
             
-    #         # Draw background
-    #         pygame.draw.rect(buffer, DARK_BLUE, (inv_x, inv_y, panel_width, panel_height), border_radius=5)
-    #         pygame.draw.rect(buffer, GREY, (inv_x, inv_y, panel_width, panel_height), 2, border_radius=5)
+            # Draw background
+            pygame.draw.rect(buffer, DARK_BLUE, (inv_x, inv_y, panel_width, panel_height), border_radius=5)
+            pygame.draw.rect(buffer, GREY, (inv_x, inv_y, panel_width, panel_height), 2, border_radius=5)
             
-    #         # Draw slots
-    #         slot_spacing = 5
-    #         start_x = inv_x + slot_spacing
-    #         for i in range(4):
-    #             slot_rect = pygame.Rect(start_x + i*(slot_size+slot_spacing), inv_y + slot_spacing, slot_size, slot_size)
-    #             pygame.draw.rect(buffer, color_light, slot_rect, border_radius=3)
+            # Draw slots
+            slot_spacing = 5
+            start_x = inv_x + slot_spacing
+            for i in range(4):
+                slot_rect = pygame.Rect(start_x + i*(slot_size+slot_spacing), inv_y + slot_spacing, slot_size, slot_size)
+                pygame.draw.rect(buffer, color_light, slot_rect, border_radius=3)
                 
-    #             # Draw items if present
-    #             if i < len(self.toolbox):
-    #                 item_img = pygame.transform.scale(self.toolbox[i].image, (slot_size, slot_size))
-    #                 buffer.blit(item_img, slot_rect.topleft)
+                # Draw items if present
+                if i < len(self.toolbox):
+                    item_img = pygame.transform.scale(self.toolbox[i].image, (slot_size, slot_size))
+                    buffer.blit(item_img, slot_rect.topleft)
+                    
+        pressed_keys = pygame.key.get_pressed()
+            
+        # Add inventory toggle
+        if pressed_keys[K_e]:
+            if not self.inventory_open:
+                self.show_inventory = not self.show_inventory
+                self.inventory_open = True
+        else:
+            self.inventory_open = False
 
     def repairObject(self): #use tools to repair or interact with objects
         pass
@@ -371,8 +379,8 @@ class Astronaut(Player):
 
         overlay = "\n".join(f"Detected: {item}" for item in self.rfid_detectable)
         print("RFID Scan Results:\n" + overlay)
-        pygame.time.wait(1000) #duration of the scan
-        self.rfid_use = False #finishes the scan
+        pygame.time.wait(1000) # duration of the scan
+        self.rfid_use = False # finishes the scan
 
 
     def draw(self, platforms, items, camera_offset, BUFFER, camera):
@@ -495,6 +503,11 @@ class Item(pygame.sprite.Sprite):
         self.static = False
 
         self.heldBy = None
+
+    def interaction(self, player):
+        if len(player.toolbox) < 4:  # Only collect if inventory not full
+            player.toolbox.append(self)
+            self.kill()  # Remove from world
     
     def draw(self, buffer, camera_offset, camera):
         self.updateRect(camera_offset)
@@ -526,9 +539,6 @@ class Item(pygame.sprite.Sprite):
                     self.velocity_y = 0
                     self.on_ground = True
                     self.standing_on = platform
-
-                    
-                    
 
                 elif self.rect.right >= platform.rect.left and self.rect.left <= platform.rect.right:
                     if self.position[0] < platform.rect.centerx:  
@@ -643,7 +653,7 @@ class PressurePlate(Item):
             if item.type == 'rock':
                 if item.rect.centerx >= self.rect.left and item.rect.centerx < self.rect.right:
                     self.weight += item.weight
-        print(self.weight)
+        print('Current weight =', self.weight)
     
 
 
@@ -714,6 +724,7 @@ def main_game(level):
 
         # Draw both characters
         AstrChar.draw(world.platforms, world.items, camera_offset, BUFFER, camera)
+        AstrChar.draw_inventory(BUFFER, camera)
         
         AlienChar.update(world.platforms, world.items, camera_offset)
 

@@ -3,7 +3,7 @@
         "background": "assets/bg.png",
         "ambientSound": "",
         "platforms": {
-                "ground": [0, 380, 1000, 20], 
+                "ground": [0, 400, 1000, 400], 
                 "platform1": [200, 300, 200, 20],
                 "platform2": [500, 250, 200, 20],
                 "platform3": [300, 200, 200, 20],
