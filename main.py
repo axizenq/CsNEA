@@ -12,7 +12,16 @@ with open("character_config.json", "r") as config_file:
     CHARACTER_CONFIG = json.load(config_file)
     
     
-#Initialzing 
+# Constants
+
+# Tile types 
+TILE_TYPES = {
+    0: "air",
+    1: "platform",
+    2: "oxygen_pump",
+    3: "pressure_plate"
+}
+
 pygame.init()
 vec = pygame.math.Vector2 
 
@@ -35,11 +44,16 @@ font = pygame.font.Font(None, 24)  # Default font, size 24
 
 
 #Other Variables for use in the program
+LEVEL_WIDTH = 1000 
+LEVEL_HEIGHT = 800
 SCREEN_WIDTH = 600
 SCREEN_HEIGHT = 400
 ACC = 0.5
 FRIC = -0.12
 GRAVITY = 0.5
+TILE_SIZE = 50
+GRID_WIDTH = LEVEL_WIDTH // TILE_SIZE
+GRID_HEIGHT = LEVEL_HEIGHT // TILE_SIZE
 
 #Adding a new User event 
 INC_SPEED = pygame.USEREVENT + 1
@@ -103,10 +117,6 @@ class Camera:
         self.camera = pygame.Rect(x, y, self.width, self.height)
 
 
-# Level is larger than the screen
-LEVEL_WIDTH = 1000 
-LEVEL_HEIGHT = 800
-
 camera = Camera(LEVEL_WIDTH, LEVEL_HEIGHT)
 
 class Character(pygame.sprite.Sprite):
@@ -167,7 +177,23 @@ class Character(pygame.sprite.Sprite):
         
         for platform in platforms:
             if self.rect.colliderect(platform.rect):
-                print("collided at -> ", platform.name, " velocity_y -> ", self.velocity_y, " postion ", self.position)
+                print("collided at -> ", platform.name, " velocity_y -> ", self.velocity_y, " position ", self.position)
+                
+                #this section checks if the player hits the ground while falling and resets their y velocity to 0
+                # if self.velocity_y > 0 and self.rect.bottom <= platform.rect.top + 10:
+                #     self.rect.bottom = platform.rect.top
+                #     self.velocity_y = 0                 
+                #     self.on_ground = True
+                #     self.standing_on = platform
+                
+                # elif self.rect.right >= platform.rect.left and self.rect.left <= platform.rect.right:
+                #     if self.position[0] < platform.rect.centerx:  
+                #         self.rect.right = platform.rect.left
+                #     elif self.position[0] > platform.rect.centerx:  
+                #         self.rect.left = platform.rect.right
+                #     self.rect.y = self.position[1]
+                                        
+                # self.position = self.rect.topleft
                 
                 if self.velocity_y > 0 and self.rect.bottom <= platform.rect.top + 10:
                     self.rect.bottom = platform.rect.top
@@ -175,14 +201,16 @@ class Character(pygame.sprite.Sprite):
                     self.on_ground = True
                     self.standing_on = platform
                     
-                elif self.rect.right >= platform.rect.left and self.rect.left <= platform.rect.right:
-                    if self.position[0] < platform.rect.centerx:  
-                        self.rect.right = platform.rect.left
-                    elif self.position[0] > platform.rect.centerx:  
-                        self.rect.left = platform.rect.right
-                    self.rect.y = self.position[1]
-                                        
-                self.position = self.rect.topleft
+                elif self.velocity_y < 0 and self.rect.top >= platform.rect.bottom - 10:
+                    self.rect.top = platform.rect.bottom
+                    self.velocity_y = 0
+
+                if self.rect.right > platform.rect.left and not self.rect.left > platform.rect.left:
+                    self.rect.right = platform.rect.left
+
+                elif self.rect.left < platform.rect.right and not self.rect.right < platform.rect.right:
+                    self.rect.left = platform.rect.right
+
         
         if self.on_ground and self.velocity_y == 0:
             if self.check_falling_off() == True:
@@ -414,11 +442,11 @@ class Astronaut(Player):
 
 
 class World:
-    def __init__(self, load = True, level = 1):
+    def __init__(self, load=True, level=1):
         self.level = level
         self.background = None
         self.ambientSound = None
-        self.platforms = pygame.sprite.Group()
+        # self.platforms = pygame.sprite.Group()
         self.items = pygame.sprite.Group()
         self.itemTypes = {
                 "Item": Item,
@@ -428,27 +456,63 @@ class World:
                  'BareRock': BareRock,
                  'MossyRock': MossyRock
                  }
-
-        self.ast_start = None
-        self.alien_start = None
-
-        if load == True:
-            self.loadWorld(self.level)
+        self.tilemap = []
+        self.loadWorld(level)
 
     def loadWorld(self, level):
         with open("world.json", "r") as config_file:
             WORLD_CONFIG = json.load(config_file)
-
-        self.background = pygame.image.load(WORLD_CONFIG[level]["background"])
-        
-        for platform_name, platform_data in WORLD_CONFIG[level]["platforms"].items():
-            self.platforms.add(Platform(*platform_data, name = platform_name))
             
-        for item_name, item_data in WORLD_CONFIG[level]["items"].items():
-            self.items.add(self.itemTypes[WORLD_CONFIG[level]["items"][item_name]["type"]](item_name, WORLD_CONFIG[level]["items"][item_name]["position"]))
+        # Load tilemap layers
+        self.tilemap = WORLD_CONFIG[str(level)]["tilemap"]
+        self.item_layer = WORLD_CONFIG[str(level)]["items"]
+        self.entity_layer = WORLD_CONFIG[str(level)]["entities"]
+        
+        # Generate platforms from tilemap
+        for y, row in enumerate(self.tilemap):
+            for x, tile in enumerate(row):
+                if tile == 1:  # Platform tile
+                    platform = Platform(x*TILE_SIZE, y*TILE_SIZE, 
+                                      TILE_SIZE, TILE_SIZE)
+                    self.platforms.add(platform)
+        
+        # Load items
+        for y, row in enumerate(self.item_layer):
+            for x, tile in enumerate(row):
+                if tile == 2:  # Oxygen pump
+                    self.items.add(OxygenPump("oxy", (x*TILE_SIZE, y*TILE_SIZE)))
+                elif tile == 3:  # Pressure plate
+                    self.items.add(PressurePlate("plate", (x*TILE_SIZE, y*TILE_SIZE)))
 
-        self.ast_start = WORLD_CONFIG[level]["astronaut"]["position"]
-        self.alien_start = WORLD_CONFIG[level]["alien"]["position"]
+        # Load entities
+        self.ast_start = self.entity_layer["astronaut"]
+        self.alien_start = self.entity_layer["alien"]
+        
+
+
+
+
+
+        # self.ast_start = None
+        # self.alien_start = None
+
+    #     if load == True:
+    #         self.loadWorld(self.level)
+
+    # def loadWorld(self, level):
+    #     with open("world.json", "r") as config_file:
+    #         WORLD_CONFIG = json.load(config_file)
+
+    #     self.background = pygame.image.load(WORLD_CONFIG[level]["background"])
+        
+    #     for platform_name, platform_data in WORLD_CONFIG[level]["platforms"].items():
+    #         self.platforms.add(Platform(*platform_data, name = platform_name))
+            
+    #     for item_name, item_data in WORLD_CONFIG[level]["items"].items():
+    #         self.items.add(self.itemTypes[WORLD_CONFIG[level]["items"][item_name]["type"]](item_name, WORLD_CONFIG[level]["items"][item_name]["position"]))
+
+    #     self.ast_start = WORLD_CONFIG[level]["astronaut"]["position"]
+    #     self.alien_start = WORLD_CONFIG[level]["alien"]["position"]
 
 class Environment:
     def __init__(self, gravity, background, ambientSound):
@@ -734,7 +798,7 @@ def main_game(level):
         pygame.display.update()
         clock.tick(FPS)
 
-        BUFFER.fill(WHITE)
+        # BUFFER.fill(WHITE)
 
         # BUFFER.blit(background, (0,0))
         

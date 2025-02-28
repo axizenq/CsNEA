@@ -6,6 +6,8 @@ pygame.init()
 SCREEN_WIDTH = 600
 SCREEN_HEIGHT = 400
 BUFFER = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
+background = pygame.transform.scale(pygame.image.load("assets/statebg.png"), 
+                                   (SCREEN_WIDTH, SCREEN_HEIGHT))
 
 WHITE = (255, 255, 255)
 color_light = (170, 170, 170)
@@ -23,6 +25,7 @@ text = smallfont.render('quit' , True , WHITE)
 
 def level_menu():
     while True:
+        BUFFER.blit(background, (0, 0))
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -47,9 +50,6 @@ def level_menu():
                 if button_x <= mouse[0] <= button_x + BUTTON_WIDTH and button_y + 3 * BUTTON_SPACING <= mouse[1] <= button_y + 3 * BUTTON_SPACING + BUTTON_HEIGHT:
                     pygame.quit()
                     sys.exit()
-
-
-        BUFFER.fill((60, 25, 60))
 
         mouse = pygame.mouse.get_pos()
 
