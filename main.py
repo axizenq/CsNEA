@@ -446,7 +446,7 @@ class World:
         self.level = level
         self.background = None
         self.ambientSound = None
-        # self.platforms = pygame.sprite.Group()
+        self.platforms = pygame.sprite.Group()
         self.items = pygame.sprite.Group()
         self.itemTypes = {
                 "Item": Item,
