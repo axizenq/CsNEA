@@ -304,7 +304,7 @@ class Alien(Player):
         self.phaseAbilityDuration = phaseAbilityDuration 
         self.shapeShiftState = shapeShiftState
         self.image = pygame.image.load("assets/alien_still.png")  
-        self.image = pygame.transform.scale(self.image, (30, 40))
+        self.image = pygame.transform.scale(self.image, (40, 40))
         self.rect = self.image.get_rect()
         self.rect.topleft = position
 
@@ -332,7 +332,7 @@ class Astronaut(Player):
         self.selected_slot = 0
 
         self.image = pygame.image.load("assets/astronaut_still.png")
-        self.image = pygame.transform.scale(self.image, (30, 40))
+        self.image = pygame.transform.scale(self.image, (40, 40))
         self.rect = self.image.get_rect()
         self.rect.topleft = position
         
