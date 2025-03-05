@@ -464,29 +464,33 @@ class World:
             WORLD_CONFIG = json.load(config_file)
             
         # Load tilemap layers
-        self.tilemap = WORLD_CONFIG[str(level)]["level_1"]
-        self.item_layer = WORLD_CONFIG[str(level)]["items"]
+        self.tilemap = WORLD_CONFIG[str(level)]['tiles']
+        #self.item_layer = WORLD_CONFIG[str(level)]
         self.entity_layer = WORLD_CONFIG[str(level)]["entities"]
         
         # Generate platforms from tilemap
-        for y, row in enumerate(self.tilemap):
-            for x, tile in enumerate(row):
-                if tile == 1:  # Platform tile
-                    platform = Platform(x*TILE_SIZE, y*TILE_SIZE, 
-                                      TILE_SIZE, TILE_SIZE)
-                    self.platforms.add(platform)
+        print(self.tilemap)
+        for key, value in self.tilemap.items(): 
+            print(key,value)
+        '''            # for x, tile in enumerate(row):
+            #     print('tile', x, tile)
+            #     if tile == 1:  # Platform tile
+            #         print('yay found platform')
+            #         platform = Platform(x*TILE_SIZE, y*TILE_SIZE, 
+            #                           TILE_SIZE, TILE_SIZE)
+            #         self.platforms.add(platform)
         
         # Load items
-        for y, row in enumerate(self.item_layer):
-            for x, tile in enumerate(row):
-                if tile == 2:  # Oxygen pump
-                    self.items.add(OxygenPump("oxy", (x*TILE_SIZE, y*TILE_SIZE)))
-                elif tile == 3:  # Pressure plate
-                    self.items.add(PressurePlate("plate", (x*TILE_SIZE, y*TILE_SIZE)))
-
+        # for y, row in enumerate(self.item_layer):
+        #     for x, tile in enumerate(row):
+        #         if tile == 2:  # Oxygen pump
+        #             self.items.add(OxygenPump("oxy", (x*TILE_SIZE, y*TILE_SIZE)))
+        #         elif tile == 3:  # Pressure plate
+        #             self.items.add(PressurePlate("plate", (x*TILE_SIZE, y*TILE_SIZE)))
+        '''
         # Load entities
-        self.ast_start = self.entity_layer["astronaut"]
-        self.alien_start = self.entity_layer["alien"]
+        self.ast_start = self.entity_layer["astronaut"]["pos"]
+        self.alien_start = self.entity_layer["alien"]["pos"]
         
 
 
@@ -771,7 +775,7 @@ def main_game(level):
         camera_offset = update_camera(AstrChar, camera_offset)
 
         BUFFER.fill(WHITE)
-        BUFFER.blit(world.background, (-camera_offset.x, -camera_offset.y))
+        #BUFFER.blit(world.background, (-camera_offset.x, -camera_offset.y))
 
 
 
