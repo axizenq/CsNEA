@@ -464,7 +464,7 @@ class World:
             WORLD_CONFIG = json.load(config_file)
             
         # Load tilemap layers
-        self.tilemap = WORLD_CONFIG[str(level)]["tilemap"]
+        self.tilemap = WORLD_CONFIG[str(level)]["level_1"]
         self.item_layer = WORLD_CONFIG[str(level)]["items"]
         self.entity_layer = WORLD_CONFIG[str(level)]["entities"]
         
